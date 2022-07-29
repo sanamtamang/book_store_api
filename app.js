@@ -38,6 +38,12 @@ app.get("/book/list", async (req, res) => {
   res.json(books);
 });
 
+app.get("/book/:id", async (req, res) => {
+  const id = req.params.id;
+  const results = await pool.query(`SELECT * FROM book where id=${id}`);
+  res.json(results.rows[0]);
+});
+
 app.get("/users/login", (req, res) => {
   res.send("login");
 });
