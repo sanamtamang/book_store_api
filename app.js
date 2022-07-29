@@ -3,9 +3,14 @@ const { pool } = require("./dbConfig");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const flash = require("express-flash");
+const cors = require("cors");
 
 const app = express();
-
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 app.use(
   session({
     secret: "secret",
@@ -25,7 +30,8 @@ app.get("/book/list", async (req, res) => {
       imageUrl: book.imageurl,
       description: {
         publish_date: book.publish_date,
-        price: book.price,
+        price: book.price - (book.price * 10) / 100,
+        discount: (book.price * 10) / 100,
       },
     };
   });
