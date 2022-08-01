@@ -71,22 +71,26 @@ app.post("/users/register", async (req, res) => {
     res.status(500).send();
   }
 });
+app.post("/users/login", async (req, res) => {
+  const results = await pool.query(
+    `SELECT * FROM users where email='${req.body.email}'`
+  );
+  const user = results.rows[0];
 
-// app.post("/users/login", (req, res) => {
-//   const user = users.find((user) => (user.email = usersList.email));
-//   if (users == null) {
-//     return res.status(400).send("can not find user");
-//   }
-//   try {
-//     if (bcrypt.compare(usersList.password, users.password)) {
-//       res.send("success");
-//     } else {
-//       res.send("this is not allowed");
-//     }
-//   } catch {
-//     res.status(500).send();
-//   }
-// });
+  if (user === null || user === undefined) {
+    return res.status(400).send("can not find user");
+  }
+  try {
+    if (bcrypt.compareSync(req.body.password, user.password)) {
+      res.send("success");
+    } else {
+      res.send("this is not allowed");
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).send();
+  }
+});
 
 app.listen(process.env.PORT, () => {
   console.log("server is locahhost:", process.env.PORT);
