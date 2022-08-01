@@ -4,8 +4,13 @@ const bcrypt = require("bcrypt");
 const session = require("express-session");
 const flash = require("express-flash");
 const cors = require("cors");
+const bodyParser = require("body-parser");
+const { query } = require("express");
 
 const app = express();
+
+app.use(bodyParser.json());
+
 app.use(
   cors({
     origin: "*",
@@ -44,59 +49,44 @@ app.get("/book/:id", async (req, res) => {
   res.json(results.rows[0]);
 });
 
-app.get("/users/login", (req, res) => {
-  res.send("login");
-});
-
 app.post("/users/register", async (req, res) => {
-  let { name, email, password, password2 } = req.body;
+  const usersList = req.body;
 
-  let errors = [];
-  if (!name || !email || !password || !password2) {
-    errors.push({ message: "Please enter all fields" });
-  }
+  try {
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(usersList.password, salt);
 
-  if (password.length < 6) {
-    errors.push({ message: "Password should be at least 6 characters" });
-  }
-
-  if (password !== password2) {
-    errors.push({ message: "Passwords  do not match" });
-  }
-
-  if (errors.length < 6) {
-    res.render("register", { errors });
-  } else {
-    let hashedPassword = await bcrypt.hash(password, 10);
-    pool.query(
-      `SELECT * FROM users WHERE email = $1`,
-      [email],
-      (err, results) => {
-        if (err) {
-          throw err;
-        } else {
-          pool.query(
-            `INSERT INTO users (name ,email,password) VALUES ($1,$2,$3) RETURNING id, password`,
-            [name, email, hashedPassword],
-            (err, results) => {
-              if (err) {
-                throw err;
-              }
-              req.flash("success_msg", "you are now registered . please login");
-              res.redirect("/users/login");
-              res.json(results.rows);
-            }
-          );
-        }
-
-        if (results.rows.length > 0) {
-          errors.push({ message: "Email already registered" });
-          res.render("register", { errors });
-        }
-      }
+    const results = await pool.query(
+      "INSERT INTO users(name, email, password) values($1, $2, $3) returning *",
+      [usersList.name, usersList.email, hashedPassword]
     );
+
+    res.status(201).json({
+      id: results.rows[0].id,
+      name: results.rows[0].name,
+      email: results.rows[0].email,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send();
   }
 });
+
+// app.post("/users/login", (req, res) => {
+//   const user = users.find((user) => (user.email = usersList.email));
+//   if (users == null) {
+//     return res.status(400).send("can not find user");
+//   }
+//   try {
+//     if (bcrypt.compare(usersList.password, users.password)) {
+//       res.send("success");
+//     } else {
+//       res.send("this is not allowed");
+//     }
+//   } catch {
+//     res.status(500).send();
+//   }
+// });
 
 app.listen(process.env.PORT, () => {
   console.log("server is locahhost:", process.env.PORT);
