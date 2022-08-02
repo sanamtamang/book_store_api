@@ -5,7 +5,7 @@ const session = require("express-session");
 const flash = require("express-flash");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-const { query } = require("express");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
@@ -71,6 +71,7 @@ app.post("/users/register", async (req, res) => {
     res.status(500).send();
   }
 });
+
 app.post("/users/login", async (req, res) => {
   const results = await pool.query(
     `SELECT * FROM users where email='${req.body.email}'`
@@ -80,9 +81,22 @@ app.post("/users/login", async (req, res) => {
   if (user === null || user === undefined) {
     return res.status(400).send("can not find user");
   }
+
   try {
     if (bcrypt.compareSync(req.body.password, user.password)) {
-      res.send("success");
+      const token = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.TOKEN_KEY,
+        {
+          expiresIn: "5m",
+        }
+      );
+
+      res.json({
+        token: token,
+        name: user.name,
+        email: user.email,
+      });
     } else {
       res.send("this is not allowed");
     }
@@ -90,6 +104,12 @@ app.post("/users/login", async (req, res) => {
     console.log(err);
     res.status(500).send();
   }
+});
+
+app.get("/current-user", (req, res) => {
+  const token = req.headers["authorization"];
+  const decodedUser = jwt.verify(token, process.env.TOKEN_KEY);
+  res.json(decodedUser);
 });
 
 app.listen(process.env.PORT, () => {
