@@ -62,13 +62,26 @@ app.post("/users/register", async (req, res) => {
     );
 
     res.status(201).json({
-      id: results.rows[0].id,
-      name: results.rows[0].name,
-      email: results.rows[0].email,
+      success: true,
+      message: "",
+      data: {
+        id: results.rows[0].id,
+        name: results.rows[0].name,
+        email: results.rows[0].email,
+      },
     });
   } catch (err) {
-    console.log(err);
-    res.status(500).send();
+    if (err.code === "23505") {
+      res.status(200).json({
+        message: "Email already exists",
+        success: false,
+        data: null,
+      });
+    } else {
+      res.status(500).json({
+        message: "Internal server error",
+      });
+    }
   }
 });
 
