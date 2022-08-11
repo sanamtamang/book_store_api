@@ -109,13 +109,13 @@ app.post("/users/login", async (req, res) => {
         token: token,
         name: user.name,
         email: user.email,
+        success: true,
       });
     } else {
       res.send("this is not allowed");
     }
   } catch (err) {
-    console.log(err);
-    res.status(500).send();
+    res.status(500).json({});
   }
 });
 
