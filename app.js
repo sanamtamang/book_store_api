@@ -112,23 +112,16 @@ app.post("/users/login", async (req, res) => {
         success: true,
       });
     } else {
-      res.send("this is not allowed");
+      res.json({
+        success: false,
+        message: "Email or Password is Invalid",
+      });
     }
   } catch (err) {
     res.status(500).json({});
   }
 });
 
-app.get("/user/logout", async (req, res) => {
-  const id = req.params.id;
-  console.log("id", id);
-  if (id) {
-    delete id;
-    res.json({ result: "SUCCESS" });
-  } else {
-    res.json({ result: "ERROR", message: "User is not logged in." });
-  }
-});
 app.get("/current-user", (req, res) => {
   const token = req.headers["authorization"];
   const decodedUser = jwt.verify(token, process.env.TOKEN_KEY);
@@ -161,28 +154,48 @@ app.post("/user/password/forgot", async (req, res) => {
   });
 });
 app.post("/user/code/verify", async (req, res) => {
-  // code, email
-  // timestamp
-  // code last ko nikalne
-  // user ko code sanga cmpare
-  // milyo vane code verified
-  // milne code incorrect
-  // const email = req.body.email;
   const randomCode = req.body.code;
-  // const email = req.body.email;
-
-  // console.log(email);
+  const email = req.body.email;
+  const results = await pool.query(
+    `SELECT * FROM email_code where email='${email}' and createdat is not null order by createdat desc`
+  );
+  const savedCode = results.rows?.[0]?.code;
+  if (randomCode === savedCode) {
+    res.json({
+      success: true,
+      message: "Verified",
+      data: {},
+      // Send token
+    });
+  } else {
+    res.json({
+      success: false,
+      message: "Incorrect code",
+      data: null,
+    });
+  }
+});
+app.post("/user/reset/password", async (req, res) => {
+  const randomCode = req.body.code;
+  const email = req.body.email;
 
   const results = await pool.query(
-    `SELECT * FROM email_code where code=${randomCode}`
+    `SELECT * FROM email_code where email='${email}' and createdat is not null order by createdat desc`
   );
-  console.log(results);
-
-  res.json({
-    success: true,
-    message: "Verified",
-    data: {},
-  });
+  const savedCode = results.rows?.[0]?.code;
+  if (randomCode === savedCode) {
+    res.json({
+      success: true,
+      message: "Verified",
+      data: {},
+    });
+  } else {
+    res.json({
+      success: false,
+      message: "Incorrect code",
+      data: null,
+    });
+  }
 });
 app.listen(process.env.PORT, () => {
   console.log("server is locahhost:", process.env.PORT);
