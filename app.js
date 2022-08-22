@@ -119,12 +119,71 @@ app.post("/users/login", async (req, res) => {
   }
 });
 
+app.get("/user/logout", async (req, res) => {
+  const id = req.params.id;
+  console.log("id", id);
+  if (id) {
+    delete id;
+    res.json({ result: "SUCCESS" });
+  } else {
+    res.json({ result: "ERROR", message: "User is not logged in." });
+  }
+});
 app.get("/current-user", (req, res) => {
   const token = req.headers["authorization"];
   const decodedUser = jwt.verify(token, process.env.TOKEN_KEY);
   res.json(decodedUser);
 });
 
+app.post("/user/password/forgot", async (req, res) => {
+  const email = req.body.email;
+  const result = await pool.query(`SELECT * FROM users where email='${email}'`);
+  const userExists = result.rows.length > 0;
+  if (!userExists) {
+    res.status(400).json({
+      success: false,
+      message: "User doesn't exist!",
+    });
+  }
+  const user = result.rows[0];
+  const randomCode = Math.floor(Math.random() * 1000000);
+  console.log("email code", randomCode);
+  const results = await pool.query(
+    "INSERT INTO email_code(code,email) values($1,$2) returning *",
+    [randomCode, user.email]
+  );
+  res.json({
+    success: true,
+    message: "Please check your email to get the code",
+    data: {
+      email: results.rows[0].email,
+    },
+  });
+});
+app.post("/user/code/verify", async (req, res) => {
+  // code, email
+  // timestamp
+  // code last ko nikalne
+  // user ko code sanga cmpare
+  // milyo vane code verified
+  // milne code incorrect
+  // const email = req.body.email;
+  const randomCode = req.body.code;
+  // const email = req.body.email;
+
+  // console.log(email);
+
+  const results = await pool.query(
+    `SELECT * FROM email_code where code=${randomCode}`
+  );
+  console.log(results);
+
+  res.json({
+    success: true,
+    message: "Verified",
+    data: {},
+  });
+});
 app.listen(process.env.PORT, () => {
   console.log("server is locahhost:", process.env.PORT);
 });
