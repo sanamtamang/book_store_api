@@ -176,26 +176,20 @@ app.post("/user/code/verify", async (req, res) => {
   }
 });
 app.post("/user/reset/password", async (req, res) => {
-  const randomCode = req.body.code;
-  const email = req.body.email;
+  const usersList = req.body;
+  console.log(usersList.email);
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(usersList.password, salt);
 
-  const results = await pool.query(
-    `SELECT * FROM email_code where email='${email}' and createdat is not null order by createdat desc`
+  const updatePassword = await pool.query(
+    `UPDATE users SET password='${hashedPassword}' WHERE email='${usersList.email}'`
   );
-  const savedCode = results.rows?.[0]?.code;
-  if (randomCode === savedCode) {
-    res.json({
-      success: true,
-      message: "Verified",
-      data: {},
-    });
-  } else {
-    res.json({
-      success: false,
-      message: "Incorrect code",
-      data: null,
-    });
-  }
+
+  res.json({
+    success: true,
+    message: "Password reset successfully.",
+    data: {},
+  });
 });
 app.listen(process.env.PORT, () => {
   console.log("server is locahhost:", process.env.PORT);
