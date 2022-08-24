@@ -43,6 +43,10 @@ app.get("/book/list", async (req, res) => {
   res.json(books);
 });
 
+app.get("/top/sales/book", (req, res) => {
+  res.send("check");
+});
+
 app.get("/book/:id", async (req, res) => {
   const id = req.params.id;
   const results = await pool.query(`SELECT * FROM book where id=${id}`);
@@ -194,6 +198,9 @@ app.post("/user/reset/password", async (req, res) => {
 
 app.post("/sells/book", async (req, res) => {
   const bookList = req.body;
+  bookList.imageUrl =
+    bookList.imageUrl ||
+    "https://images.unsplash.com/photo-1510172951991-856a654063f9?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=387&q=80";
   const results = await pool.query(
     "INSERT INTO book(title, author,price,imageurl,quantity ) values($1, $2, $3,$4,$5) returning *",
     [
