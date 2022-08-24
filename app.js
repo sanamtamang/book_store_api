@@ -191,6 +191,35 @@ app.post("/user/reset/password", async (req, res) => {
     data: {},
   });
 });
+
+app.post("/sells/book", async (req, res) => {
+  const bookList = req.body;
+  const results = await pool.query(
+    "INSERT INTO book(title, author,price,imageurl,quantity ) values($1, $2, $3,$4,$5) returning *",
+    [
+      bookList.title,
+      bookList.author,
+      bookList.price,
+      bookList.imageurl,
+      bookList.quantity,
+    ]
+  );
+
+  res.status(201).json({
+    success: true,
+    message: "Thank you",
+    data: {
+      id: results.rows[0].id,
+      title: results.rows[0].title,
+      author: results.rows[0].author,
+      imageUrl: results.rows[0].imageurl,
+      description: {
+        quantity: results.rows[0].quantity,
+        price: results.rows[0].price,
+      },
+    },
+  });
+});
 app.listen(process.env.PORT, () => {
   console.log("server is locahhost:", process.env.PORT);
 });
