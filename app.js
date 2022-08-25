@@ -23,7 +23,7 @@ app.use(
     saveUninitialized: false,
   })
 );
-app.use(flash());
+// app.use(flash());
 
 app.get("/book/list", async (req, res) => {
   const results = await pool.query("select * from book");
@@ -43,7 +43,7 @@ app.get("/book/list", async (req, res) => {
   res.json(books);
 });
 
-app.get("/top/sales/book", (req, res) => {
+app.get("/order/book", (req, res) => {
   res.send("check");
 });
 
@@ -137,14 +137,14 @@ app.post("/user/password/forgot", async (req, res) => {
   const result = await pool.query(`SELECT * FROM users where email='${email}'`);
   const userExists = result.rows.length > 0;
   if (!userExists) {
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       message: "User doesn't exist!",
     });
   }
-  const user = result.rows[0];
   const randomCode = Math.floor(Math.random() * 1000000);
   console.log("email code", randomCode);
+  const user = result.rows[0];
   const results = await pool.query(
     "INSERT INTO email_code(code,email) values($1,$2) returning *",
     [randomCode, user.email]
