@@ -23,7 +23,6 @@ app.use(
     saveUninitialized: false,
   })
 );
-// app.use(flash());
 
 app.get("/book/list", async (req, res) => {
   const results = await pool.query("select * from book");
@@ -43,8 +42,13 @@ app.get("/book/list", async (req, res) => {
   res.json(books);
 });
 
-app.get("/order/book", (req, res) => {
-  res.send("check");
+app.post("/add_to/cart", async (req, res) => {
+  const cart = req.body;
+  try {
+    // const results = await pool.query("INSERT INTO users(name, email, password) values($1, $2, $3) returning *",)
+  } catch (err) {
+    res.status(400).send({ success: false, message: "Internal Error" });
+  }
 });
 
 app.get("/book/:id", async (req, res) => {
@@ -207,7 +211,7 @@ app.post("/sells/book", async (req, res) => {
       bookList.title,
       bookList.author,
       bookList.price,
-      bookList.imageurl,
+      bookList.imageUrl,
       bookList.quantity,
     ]
   );
