@@ -43,7 +43,6 @@ app.get("/book/list", async (req, res) => {
 
 app.post("/add/to/cart", async (req, res) => {
   const cartDetails = req.body;
-  console.log(cartDetails);
   const results = await pool.query(
     "INSERT INTO cart(bookid,userid,quantity) VALUES($1, $2, $3) returning *",
     [cartDetails.bookid, cartDetails.userid, cartDetails.quantity]
@@ -58,9 +57,12 @@ app.post("/add/to/cart", async (req, res) => {
 });
 
 app.get("/add/cart/list", async (req, res) => {
+  const cartDetails = req.body;
+  console.log(cartDetails);
   const results = await pool.query(
-    "SELECT bookid,title,author,price,cart.quantity as cart_quantity FROM cart INNER JOIN book ON book.id =cart.bookid"
+    `SELECT bookid,title,author,price,cart.quantity as cart_quantity FROM cart INNER JOIN book ON book.id =cart.bookid WHERE userid=${cartDetails.userid}`
   );
+
   console.log(results.rows);
   const total = await pool.query("SELECT COUNT(id) from cart");
   res.status(201).json({
@@ -75,11 +77,11 @@ app.get("/add/cart/list", async (req, res) => {
 
 app.delete("/cart/list/delete/:id", async (req, res) => {
   const id = req.params.id;
-  console.log("id", id);
   const results = await pool.query(`delete from cart where id=${id}`);
   res.status(201).json({
     success: true,
     message: "cart list",
+    data: {},
   });
 });
 
@@ -206,6 +208,12 @@ app.post("/user/code/verify", async (req, res) => {
       message: "Verified",
       data: {},
       // Send token
+    });
+  } else if (randomCode === "") {
+    res.json({
+      success: false,
+      message: "Please Enter the Pincode",
+      data: {},
     });
   } else {
     res.json({
