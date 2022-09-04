@@ -23,6 +23,15 @@ app.use(
   })
 );
 
+app.use(async (req, res, next) => {
+  const token = req.headers["authorization"];
+  if (token) {
+    const decodedUser = jwt.verify(token, process.env.TOKEN_KEY);
+    req.user = decodedUser;
+  }
+  next();
+});
+
 app.get("/book/list", async (req, res) => {
   const results = await pool.query("select * from book");
   const books = results.rows.map((book, i) => {
@@ -57,13 +66,11 @@ app.post("/add/to/cart", async (req, res) => {
 });
 
 app.get("/add/cart/list", async (req, res) => {
-  const cartDetails = req.body;
-  console.log(cartDetails);
+  const userId = req.user.userId;
   const results = await pool.query(
-    `SELECT bookid,title,author,price,cart.quantity as cart_quantity FROM cart INNER JOIN book ON book.id =cart.bookid WHERE userid=${cartDetails.userid}`
+    `SELECT bookid,title,author,price,cart.quantity as cart_quantity FROM cart INNER JOIN book ON book.id =cart.bookid WHERE cart.userId=${userId} `
   );
 
-  console.log(results.rows);
   const total = await pool.query("SELECT COUNT(id) from cart");
   res.status(201).json({
     success: true,
@@ -197,6 +204,12 @@ app.post("/user/password/forgot", async (req, res) => {
 });
 app.post("/user/code/verify", async (req, res) => {
   const randomCode = req.body.code;
+  if (randomCode === undefined || randomCode === "") {
+    return res.json({
+      success: undefined,
+      message: "Please Enter the Pincode",
+    });
+  }
   const email = req.body.email;
   const results = await pool.query(
     `SELECT * FROM email_code where email='${email}' and createdat is not null order by createdat desc`
@@ -208,12 +221,6 @@ app.post("/user/code/verify", async (req, res) => {
       message: "Verified",
       data: {},
       // Send token
-    });
-  } else if (randomCode === "") {
-    res.json({
-      success: false,
-      message: "Please Enter the Pincode",
-      data: {},
     });
   } else {
     res.json({
