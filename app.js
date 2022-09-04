@@ -2,7 +2,6 @@ const express = require("express");
 const { pool } = require("./dbConfig");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
-const flash = require("express-flash");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const jwt = require("jsonwebtoken");
@@ -42,13 +41,46 @@ app.get("/book/list", async (req, res) => {
   res.json(books);
 });
 
-app.post("/add_to/cart", async (req, res) => {
-  const cart = req.body;
-  try {
-    // const results = await pool.query("INSERT INTO users(name, email, password) values($1, $2, $3) returning *",)
-  } catch (err) {
-    res.status(400).send({ success: false, message: "Internal Error" });
-  }
+app.post("/add/to/cart", async (req, res) => {
+  const cartDetails = req.body;
+  console.log(cartDetails);
+  const results = await pool.query(
+    "INSERT INTO cart(bookid,userid,quantity) VALUES($1, $2, $3) returning *",
+    [cartDetails.bookid, cartDetails.userid, cartDetails.quantity]
+  );
+  res.status(201).json({
+    success: true,
+    message: "Thank you",
+    data: {
+      id: results.rows[0].id,
+    },
+  });
+});
+
+app.get("/add/cart/list", async (req, res) => {
+  const results = await pool.query(
+    "SELECT bookid,title,author,price,cart.quantity as cart_quantity FROM cart INNER JOIN book ON book.id =cart.bookid"
+  );
+  console.log(results.rows);
+  const total = await pool.query("SELECT COUNT(id) from cart");
+  res.status(201).json({
+    success: true,
+    message: "cart list",
+    count: total.rows[0].count,
+    data: {
+      details: results.rows,
+    },
+  });
+});
+
+app.delete("/cart/list/delete/:id", async (req, res) => {
+  const id = req.params.id;
+  console.log("id", id);
+  const results = await pool.query(`delete from cart where id=${id}`);
+  res.status(201).json({
+    success: true,
+    message: "cart list",
+  });
 });
 
 app.get("/book/:id", async (req, res) => {
@@ -231,6 +263,7 @@ app.post("/sells/book", async (req, res) => {
     },
   });
 });
+
 app.listen(process.env.PORT, () => {
   console.log("server is locahhost:", process.env.PORT);
 });
